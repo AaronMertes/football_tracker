@@ -4,4 +4,10 @@
 
 :root { color-scheme: light; }
 
-body { @apply m-0 min-w-[320px] min-h-screen bg-white text-gray-900; }
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #ffffff;
+  color: #111827; /* gray-900 */
+}
