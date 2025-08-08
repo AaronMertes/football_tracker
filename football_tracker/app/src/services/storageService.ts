@@ -1,4 +1,4 @@
-export type StorageKey = 'games' | 'settings'
+export type StorageKey = 'games' | 'settings' | 'currentGameId'
 
 export class StorageService {
   static getItem<T>(key: StorageKey, fallback: T): T {
