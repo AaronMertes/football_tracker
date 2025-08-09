@@ -4,6 +4,11 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    https: false, // HTTPS disabled - use Quick Entry instead of voice
+    host: true,
+    port: 5174
+  },
   plugins: [
     react(),
     VitePWA({

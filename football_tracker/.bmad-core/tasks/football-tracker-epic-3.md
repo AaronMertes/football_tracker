@@ -58,6 +58,16 @@
 - Implement play validation and error handling
 - Create play history display component
 
+**Subtasks:**
+- [ ] Play Entry UI Component: Design and implement a user-friendly Play Entry form with fields/buttons for play type, yards, and outcome. Ensure fast, minimal-click workflow.
+- [ ] Keyboard Input Handling: Implement keyboard-based data entry for all play fields, with validation and error messages.
+- [ ] Voice Input Integration: Integrate Web Speech API for voice input, implement natural language parsing, and provide real-time feedback with user confirmation/editing.
+- [ ] Play Data Validation: Validate all play data before saving, including edge cases (penalties, turnovers).
+- [ ] Play Persistence: Save play data to local state and localStorage, ensuring correct game/sequence association.
+- [ ] Play History Display: Display a list/table of entered plays for the current game, with review/edit/delete options.
+- [ ] Error Handling and User Feedback: Provide clear feedback for successful entry, errors, or voice input issues. Ensure robust UI.
+- [ ] Accessibility and Speed Optimization: Ensure all controls are keyboard accessible and optimized for minimal clicks/taps and fast entry during live games.
+
 **Definition of Done:**
 - [ ] Voice input accurately captures play data
 - [ ] Keyboard entry works as reliable fallback
@@ -106,3 +116,18 @@
 - File List:
 - Change Log:
 - Status: Not Started 
+
+---
+
+## Story Draft Checklist
+
+Before marking any story in this epic as ready for development, the Scrum Master must run the [Story Draft Checklist](../checklists/story-draft-checklist.md) to validate:
+- Goal & context clarity
+- Technical implementation guidance
+- Reference effectiveness
+- Self-containment
+- Testing guidance
+
+**Checklist location:** `.bmad-core/checklists/story-draft-checklist.md`
+
+This ensures every story is crystal-clear, actionable, and ready for developer handoff. 

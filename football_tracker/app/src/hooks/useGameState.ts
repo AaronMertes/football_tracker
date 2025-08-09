@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import type { Game, UUID } from '../data/models'
+import type { Game, Play, UUID } from '../data/models'
 import { StorageService } from '../services/storageService'
 
 const GAMES_KEY = 'games'
@@ -10,9 +10,16 @@ function generateId(): UUID {
 }
 
 export function useGameState() {
-  const [games, setGames] = useState<Game[]>(() =>
-    StorageService.getItem<Game[]>(GAMES_KEY, []),
-  )
+  const [games, setGames] = useState<Game[]>(() => {
+    const raw = StorageService.getItem<Game[]>(GAMES_KEY, [])
+    // Backfill for older saved games that may not have currentFieldPosition
+    return raw.map((g) =>
+      ({
+        ...g,
+        currentFieldPosition: g.currentFieldPosition ?? { yardLine: 20, side: 'home' },
+      } as Game),
+    )
+  })
   const [currentGameId, setCurrentGameId] = useState<UUID | null>(() =>
     StorageService.getItem<UUID | null>(CURRENT_GAME_ID_KEY, null),
   )
@@ -41,6 +48,7 @@ export function useGameState() {
       date: now,
       plays: [],
       players: [],
+      currentFieldPosition: { yardLine: 20, side: 'home' },
       metadata: { createdAt: now, updatedAt: now },
     }
     const next = [game, ...games]
@@ -60,6 +68,19 @@ export function useGameState() {
     persist(next, nextId)
   }, [games, currentGameId, persist])
 
-  return { games, currentGame, currentGameId, createGame, selectGame, deleteGame }
+  const addPlay = useCallback((gameId: UUID, play: Play) => {
+    const nextGames = games.map((g) =>
+      g.id === gameId
+        ? {
+            ...g,
+            plays: [play, ...g.plays],
+            metadata: { ...g.metadata, updatedAt: new Date().toISOString() },
+          }
+        : g,
+    )
+    persist(nextGames, gameId)
+  }, [games, persist])
+
+  return { games, currentGame, currentGameId, createGame, selectGame, deleteGame, addPlay }
 }
 

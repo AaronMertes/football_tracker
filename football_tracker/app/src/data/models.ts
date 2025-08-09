@@ -36,6 +36,7 @@ export interface Play {
   distance: number
   playerStats: PlayerStats[]
   timestamp: string
+  notes?: string
 }
 
 export interface Game {
@@ -45,6 +46,7 @@ export interface Game {
   date: string
   plays: Play[]
   players: { id: UUID; name: string; team: 'home' | 'away' }[]
+  currentFieldPosition: FieldPosition
   metadata: GameMetadata
 }
 
