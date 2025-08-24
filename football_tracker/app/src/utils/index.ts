@@ -1,8 +1,10 @@
-export function parsePlayFromText(input: string): {
+export function parsePlayFromText(input: string, players?: Array<{ id: string; name: string; team: 'home' | 'away' }>): {
   formation?: string
   playType?: 'run' | 'pass'
   yards?: number
   result?: 'touchdown' | 'field_goal' | 'punt' | 'turnover' | 'safety' | 'none'
+  playerName?: string
+  playerId?: string
   notes?: string
 } {
   const text = input.trim().toLowerCase()
@@ -11,6 +13,8 @@ export function parsePlayFromText(input: string): {
     playType?: 'run' | 'pass'
     yards?: number
     result?: 'touchdown' | 'field_goal' | 'punt' | 'turnover' | 'safety' | 'none'
+    playerName?: string
+    playerId?: string
     notes?: string
   } = { notes: input.trim() }
 
@@ -48,6 +52,24 @@ export function parsePlayFromText(input: string): {
 
   const formationMatch = text.match(/\b(11|12|13|20|21|22|02)\b/)
   if (formationMatch) out.formation = formationMatch[1]
+
+  // Player name parsing - look for player names in the text
+  if (players && players.length > 0) {
+    // Sort players by name length (longest first) to avoid partial matches
+    const sortedPlayers = [...players].sort((a, b) => b.name.length - a.name.length)
+    
+    for (const player of sortedPlayers) {
+      const playerNameLower = player.name.toLowerCase()
+      // Check if player name appears in the text
+      if (text.includes(playerNameLower)) {
+        out.playerName = player.name
+        out.playerId = player.id
+        // Remove player name from notes to avoid duplication
+        out.notes = input.trim().replace(new RegExp(player.name, 'gi'), '').trim()
+        break
+      }
+    }
+  }
 
   return out
 }
