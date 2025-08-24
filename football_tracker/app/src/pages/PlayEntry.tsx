@@ -1,7 +1,7 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
 import FormationModal from '../components/FormationModal'
 import FormationHistory from '../components/FormationHistory'
-import PlayerSelector from '../components/PlayerSelector'
+import PlayParticipants from '../components/PlayParticipants'
 import PlayerStatsList from '../components/PlayerStatsList'
 import { useGameState } from '../hooks/useGameState'
 import { useVoiceInput } from '../hooks/useVoiceInput'
@@ -21,7 +21,7 @@ export default function PlayEntry() {
   const [yardsText, setYardsText] = useState('')
   const [result, setResult] = useState<'touchdown' | 'field_goal' | 'punt' | 'turnover' | 'safety' | 'none'>('none')
   const [notes, setNotes] = useState('')
-  const [primaryPlayerId, setPrimaryPlayerId] = useState<string | undefined>(undefined)
+  const [participants, setParticipants] = useState<Array<{ playerId: string; role: 'passer' | 'rusher' | 'receiver' | 'target' | 'interceptor' | 'fumbler' | 'recoverer'; yards?: number; result?: 'complete' | 'incomplete' | 'intercepted' | 'fumbled' | 'recovered' | 'touchdown' }>>([])
   const [overrideMode, setOverrideMode] = useState(false)
   const [manualDown, setManualDown] = useState(1)
   const [manualDistance, setManualDistance] = useState(10)
@@ -149,7 +149,12 @@ export default function PlayEntry() {
       down: playStartSituation.down, // This play's starting down
       distance: playStartSituation.distance, // This play's starting distance
       playerStats: [],
-      primaryPlayerId: primaryPlayerId,
+      participants: participants.map(p => ({
+        playerId: p.playerId,
+        role: p.role,
+        yards: p.yards,
+        result: p.result
+      })),
       timestamp: now,
       notes: sanitized.notes,
     }
@@ -161,7 +166,7 @@ export default function PlayEntry() {
     setYardsText('')
     setResult('none')
     setNotes('')
-    setPrimaryPlayerId(undefined)
+    setParticipants([])
     setOverrideMode(false)
     
     // Update manual fields to calculated next situation for potential override
@@ -308,10 +313,22 @@ export default function PlayEntry() {
                     if (parsed.playType) setPlayType(parsed.playType)
                     if (typeof parsed.yards === 'number') setYardsText(String(parsed.yards))
                     if (parsed.result) setResult(parsed.result)
-                    if (parsed.playerId) {
-                      console.log('🎯 Setting Primary Player ID:', parsed.playerId)
-                      setPrimaryPlayerId(parsed.playerId)
+                    
+                    // Handle player participants from quick entry
+                    if (parsed.playerId && currentGame?.players) {
+                      const player = currentGame.players.find(p => p.id === parsed.playerId)
+                      if (player) {
+                        // Auto-create participant based on play type
+                        const role = parsed.playType === 'run' ? 'rusher' : 'passer'
+                        setParticipants([{
+                          playerId: parsed.playerId,
+                          role,
+                          yards: parsed.yards,
+                          result: parsed.result === 'touchdown' ? 'touchdown' : undefined
+                        }])
+                      }
                     }
+                    
                     setNotes((n) => (n ? n + ' ' : '') + (parsed.notes ?? ''))
                     e.currentTarget.value = ''
                     
@@ -395,15 +412,13 @@ export default function PlayEntry() {
           </select>
         </div>
 
-        {/* Player Selection */}
+        {/* Play Participants */}
         {currentGame && (
-          <PlayerSelector
+          <PlayParticipants
             players={currentGame.players}
-            selectedPlayerId={primaryPlayerId}
-            onSelectPlayer={setPrimaryPlayerId}
+            participants={participants}
+            onParticipantsChange={setParticipants}
             playType={playType}
-            team={currentSituation.fieldPosition.side}
-            label="Primary Player"
           />
         )}
 

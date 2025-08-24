@@ -216,7 +216,12 @@ export function calculatePlayerStats(
     playType: 'run' | 'pass'
     yards: number
     result: string
-    primaryPlayerId?: string
+    participants: Array<{
+      playerId: string
+      role: 'passer' | 'rusher' | 'receiver' | 'target' | 'interceptor' | 'fumbler' | 'recoverer'
+      yards?: number
+      result?: 'complete' | 'incomplete' | 'intercepted' | 'fumbled' | 'recovered' | 'touchdown'
+    }>
   }>
 ) {
   const stats = {
@@ -229,25 +234,56 @@ export function calculatePlayerStats(
     interceptions: 0,
     touchdowns: 0,
     fumbles: 0,
-    fumblesLost: 0
+    fumblesLost: 0,
+    receivingAttempts: 0,
+    receivingYards: 0,
+    receptions: 0
   }
 
   plays.forEach(play => {
-    if (play.primaryPlayerId === playerId) {
-      if (play.playType === 'run') {
+    // Find this player's participation in this play
+    const participation = play.participants.find(p => p.playerId === playerId)
+    if (!participation) return
+
+    switch (participation.role) {
+      case 'rusher':
         stats.rushingAttempts++
-        stats.rushingYards += play.yards
-        if (play.result === 'touchdown') stats.touchdowns++
-        if (play.result === 'turnover') stats.fumbles++
-      } else if (play.playType === 'pass') {
+        stats.rushingYards += participation.yards || play.yards
+        if (participation.result === 'touchdown' || play.result === 'touchdown') stats.touchdowns++
+        if (participation.result === 'fumbled' || play.result === 'turnover') stats.fumbles++
+        break
+        
+      case 'passer':
         stats.passingAttempts++
-        if (play.yards > 0) {
+        if (participation.result === 'complete' || play.yards > 0) {
           stats.passingCompletions++
-          stats.passingYards += play.yards
+          stats.passingYards += participation.yards || play.yards
         }
-        if (play.result === 'touchdown') stats.touchdowns++
-        if (play.result === 'turnover') stats.interceptions++
-      }
+        if (participation.result === 'touchdown' || play.result === 'touchdown') stats.touchdowns++
+        if (participation.result === 'intercepted' || play.result === 'turnover') stats.interceptions++
+        break
+        
+      case 'receiver':
+      case 'target':
+        stats.receivingAttempts++
+        if (participation.result === 'complete' || play.yards > 0) {
+          stats.receptions++
+          stats.receivingYards += participation.yards || play.yards
+        }
+        if (participation.result === 'touchdown' || play.result === 'touchdown') stats.touchdowns++
+        break
+        
+      case 'interceptor':
+        stats.interceptions++
+        break
+        
+      case 'fumbler':
+        stats.fumbles++
+        break
+        
+      case 'recoverer':
+        // Recovery doesn't add to individual stats
+        break
     }
   })
 

@@ -16,6 +16,16 @@ export interface PlayerStats {
   touchdowns: number
   fumbles: number
   fumblesLost: number
+  receivingAttempts: number
+  receivingYards: number
+  receptions: number
+}
+
+export interface PlayParticipant {
+  playerId: UUID
+  role: 'passer' | 'rusher' | 'receiver' | 'target' | 'interceptor' | 'fumbler' | 'recoverer'
+  yards?: number // Yards gained/lost for this specific player
+  result?: 'complete' | 'incomplete' | 'intercepted' | 'fumbled' | 'recovered' | 'touchdown'
 }
 
 export interface Player {
@@ -45,13 +55,13 @@ export interface Play {
   playNumber: number
   formation: string
   playType: 'run' | 'pass'
-  yards: number
+  yards: number // Net yards for the play
   result: PlayResult
   fieldPosition: FieldPosition
   down: number
   distance: number
   playerStats: PlayerStats[]
-  primaryPlayerId?: UUID // Main player involved in the play
+  participants: PlayParticipant[] // Multiple players with specific roles
   timestamp: string
   notes?: string
 }
