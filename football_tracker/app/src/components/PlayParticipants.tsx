@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Player, PlayParticipant } from '../data/models'
 
 interface PlayParticipantsProps {
@@ -6,6 +6,8 @@ interface PlayParticipantsProps {
   participants: PlayParticipant[]
   onParticipantsChange: (participants: PlayParticipant[]) => void
   playType: 'run' | 'pass'
+  defaultQuarterback?: Player | null
+  onSetDefaultQuarterback?: (playerId: string) => void
   className?: string
 }
 
@@ -14,6 +16,8 @@ export default function PlayParticipants({
   participants, 
   onParticipantsChange, 
   playType,
+  defaultQuarterback,
+  onSetDefaultQuarterback,
   className = '' 
 }: PlayParticipantsProps) {
   const [isAdding, setIsAdding] = useState(false)
@@ -38,6 +42,19 @@ export default function PlayParticipants({
   }
 
   const availableRoles = getAvailableRoles()
+
+  // Auto-add default quarterback when switching to passing plays
+  useEffect(() => {
+    if (playType === 'pass' && defaultQuarterback && participants.length === 0) {
+      // Only auto-add if no participants exist yet
+      onParticipantsChange([{
+        playerId: defaultQuarterback.id,
+        role: 'passer',
+        yards: undefined,
+        result: undefined
+      }])
+    }
+  }, [playType, defaultQuarterback, participants.length, onParticipantsChange])
 
   function handleAddParticipant() {
     if (!newParticipant.playerId) return
@@ -245,10 +262,46 @@ export default function PlayParticipants({
         </div>
       )}
 
+      {/* Default Quarterback Section */}
+      {playType === 'pass' && (
+        <div className="border-t pt-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">Default Quarterback</span>
+            {onSetDefaultQuarterback && (
+              <button
+                onClick={() => {
+                  const passer = participants.find(p => p.role === 'passer')
+                  if (passer && onSetDefaultQuarterback) {
+                    onSetDefaultQuarterback(passer.playerId)
+                  }
+                }}
+                className="text-sm text-blue-600 hover:text-blue-800 underline"
+                disabled={!participants.find(p => p.role === 'passer')}
+              >
+                Set Current QB as Default
+              </button>
+            )}
+          </div>
+          
+          {defaultQuarterback ? (
+            <div className="text-sm text-gray-600 bg-green-50 p-2 rounded">
+              ✅ <strong>{defaultQuarterback.name}</strong> is set as default quarterback.
+              {defaultQuarterback.position && ` (${defaultQuarterback.position})`}
+            </div>
+          ) : (
+            <div className="text-sm text-gray-500 bg-yellow-50 p-2 rounded">
+              ⚠️ No default quarterback set. Add a QB to passing plays manually.
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Help Text */}
       <div className="text-xs text-gray-500">
         <strong>Tip:</strong> For passing plays, add the QB as "passer" and the receiver as "receiver". 
         For running plays, add the RB as "rusher". Multiple players can be involved in each play.
+        <br />
+        <strong>QB Tip:</strong> The default quarterback is automatically added to passing plays.
       </div>
     </div>
   )

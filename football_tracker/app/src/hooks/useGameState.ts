@@ -125,6 +125,26 @@ export function useGameState() {
     persist(nextGames, gameId)
   }, [games, persist])
 
+  const setDefaultQuarterback = useCallback((gameId: UUID, playerId: UUID) => {
+    const nextGames = games.map((g) =>
+      g.id === gameId
+        ? {
+            ...g,
+            defaultQuarterbackId: playerId,
+            metadata: { ...g.metadata, updatedAt: new Date().toISOString() },
+          }
+        : g,
+    )
+    persist(nextGames, gameId)
+  }, [games, persist])
+
+  const getDefaultQuarterback = useCallback((gameId: UUID): Player | null => {
+    const game = games.find(g => g.id === gameId)
+    if (!game?.defaultQuarterbackId) return null
+    
+    return game.players.find(p => p.id === game.defaultQuarterbackId) || null
+  }, [games])
+
   const selectGame = useCallback((id: UUID) => {
     if (games.some((g) => g.id === id)) {
       persist(games, id)
@@ -161,7 +181,9 @@ export function useGameState() {
     addPlayer,
     updatePlayer,
     deletePlayer,
-    togglePlayerActive
+    togglePlayerActive,
+    setDefaultQuarterback,
+    getDefaultQuarterback
   }
 }
 

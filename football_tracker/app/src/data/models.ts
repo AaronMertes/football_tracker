@@ -74,6 +74,7 @@ export interface Game {
   plays: Play[]
   players: Player[]
   currentFieldPosition: FieldPosition
+  defaultQuarterbackId?: UUID // Default QB for passing plays
   metadata: GameMetadata
 }
 

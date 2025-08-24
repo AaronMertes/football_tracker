@@ -14,7 +14,13 @@ function nextPlayNumber(existing: Play[]): number {
 }
 
 export default function PlayEntry() {
-  const { currentGame, currentGameId, addPlay } = useGameState()
+  const { 
+    currentGame, 
+    currentGameId, 
+    addPlay, 
+    getDefaultQuarterback, 
+    setDefaultQuarterback 
+  } = useGameState()
   const [isFormationOpen, setFormationOpen] = useState(false)
   const [formation, setFormation] = useState('')
   const [playType, setPlayType] = useState<'run' | 'pass'>('run')
@@ -82,6 +88,9 @@ export default function PlayEntry() {
   } : nextSituation
 
   const canSave = Boolean(currentGame && formation.trim())
+
+  // Get default quarterback for current game
+  const defaultQuarterback = currentGame ? getDefaultQuarterback(currentGame.id) : null
 
   // Focus save button when it becomes enabled after quick entry
   useEffect(() => {
@@ -318,15 +327,52 @@ export default function PlayEntry() {
                     if (parsed.playerId && currentGame?.players) {
                       const player = currentGame.players.find(p => p.id === parsed.playerId)
                       if (player) {
-                        // Auto-create participant based on play type
-                        const role = parsed.playType === 'run' ? 'rusher' : 'passer'
-                        setParticipants([{
-                          playerId: parsed.playerId,
-                          role,
-                          yards: parsed.yards,
-                          result: parsed.result === 'touchdown' ? 'touchdown' : undefined
-                        }])
+                        if (parsed.playType === 'run') {
+                          // Running play - add as rusher
+                          setParticipants([{
+                            playerId: parsed.playerId,
+                            role: 'rusher',
+                            yards: parsed.yards,
+                            result: parsed.result === 'touchdown' ? 'touchdown' : undefined
+                          }])
+                        } else if (parsed.playType === 'pass') {
+                          // Passing play - add default QB + specified player
+                          const newParticipants: Array<{
+                            playerId: string
+                            role: 'passer' | 'rusher' | 'receiver' | 'target' | 'interceptor' | 'fumbler' | 'recoverer'
+                            yards?: number
+                            result?: 'complete' | 'incomplete' | 'intercepted' | 'fumbled' | 'recovered' | 'touchdown'
+                          }> = []
+                          
+                          // Add default quarterback if available
+                          if (defaultQuarterback) {
+                            newParticipants.push({
+                              playerId: defaultQuarterback.id,
+                              role: 'passer',
+                              yards: undefined,
+                              result: undefined
+                            })
+                          }
+                          
+                          // Add the specified player (likely the receiver)
+                          newParticipants.push({
+                            playerId: parsed.playerId,
+                            role: 'receiver',
+                            yards: parsed.yards,
+                            result: parsed.result === 'touchdown' ? 'touchdown' : undefined
+                          })
+                          
+                          setParticipants(newParticipants)
+                        }
                       }
+                    } else if (parsed.playType === 'pass' && defaultQuarterback) {
+                      // No specific player mentioned, but it's a passing play - add default QB
+                      setParticipants([{
+                        playerId: defaultQuarterback.id,
+                        role: 'passer',
+                        yards: undefined,
+                        result: undefined
+                      }])
                     }
                     
                     setNotes((n) => (n ? n + ' ' : '') + (parsed.notes ?? ''))
@@ -419,6 +465,8 @@ export default function PlayEntry() {
             participants={participants}
             onParticipantsChange={setParticipants}
             playType={playType}
+            defaultQuarterback={defaultQuarterback}
+            onSetDefaultQuarterback={(playerId) => setDefaultQuarterback(currentGame.id, playerId)}
           />
         )}
 
