@@ -1,9 +1,20 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { useGameState } from '../hooks/useGameState'
+import PlayerManager from '../components/PlayerManager'
 
 export default function GameSetup() {
-  const { games, currentGame, createGame, selectGame, deleteGame } = useGameState()
+  const { 
+    games, 
+    currentGame, 
+    createGame, 
+    selectGame, 
+    deleteGame,
+    addPlayer,
+    updatePlayer,
+    deletePlayer,
+    togglePlayerActive
+  } = useGameState()
   const [homeTeam, setHomeTeam] = useState('')
   const [awayTeam, setAwayTeam] = useState('')
 
@@ -51,6 +62,20 @@ export default function GameSetup() {
           <div className="mt-4 text-sm text-gray-700">Current Game: {currentGame.homeTeam} vs {currentGame.awayTeam}</div>
         )}
       </div>
+
+      {/* Player Management Section */}
+      {currentGame && (
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold mb-4">Player Management</h2>
+          <PlayerManager
+            players={currentGame.players}
+            onAddPlayer={(player) => addPlayer(currentGame.id, player)}
+            onUpdatePlayer={(playerId, updates) => updatePlayer(currentGame.id, playerId, updates)}
+            onDeletePlayer={(playerId) => deletePlayer(currentGame.id, playerId)}
+            onToggleActive={(playerId) => togglePlayerActive(currentGame.id, playerId)}
+          />
+        </div>
+      )}
     </div>
   )
 }

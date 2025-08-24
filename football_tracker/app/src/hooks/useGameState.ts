@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import type { Game, Play, UUID } from '../data/models'
+import type { Game, Play, Player, UUID } from '../data/models'
 import { StorageService } from '../services/storageService'
 
 const GAMES_KEY = 'games'
@@ -56,6 +56,75 @@ export function useGameState() {
     return game
   }, [games, persist])
 
+  const addPlayer = useCallback((gameId: UUID, player: Omit<Player, 'id' | 'metadata'>) => {
+    const now = new Date().toISOString()
+    const newPlayer: Player = {
+      ...player,
+      id: generateId(),
+      metadata: { createdAt: now, updatedAt: now }
+    }
+    
+    const nextGames = games.map((g) =>
+      g.id === gameId
+        ? {
+            ...g,
+            players: [...g.players, newPlayer],
+            metadata: { ...g.metadata, updatedAt: now },
+          }
+        : g,
+    )
+    persist(nextGames, gameId)
+    return newPlayer
+  }, [games, persist])
+
+  const updatePlayer = useCallback((gameId: UUID, playerId: UUID, updates: Partial<Player>) => {
+    const now = new Date().toISOString()
+    const nextGames = games.map((g) =>
+      g.id === gameId
+        ? {
+            ...g,
+            players: g.players.map((p) =>
+              p.id === playerId
+                ? { ...p, ...updates, metadata: { ...p.metadata, updatedAt: now } }
+                : p,
+            ),
+            metadata: { ...g.metadata, updatedAt: now },
+          }
+        : g,
+    )
+    persist(nextGames, gameId)
+  }, [games, persist])
+
+  const deletePlayer = useCallback((gameId: UUID, playerId: UUID) => {
+    const nextGames = games.map((g) =>
+      g.id === gameId
+        ? {
+            ...g,
+            players: g.players.filter((p) => p.id !== playerId),
+            metadata: { ...g.metadata, updatedAt: new Date().toISOString() },
+          }
+        : g,
+    )
+    persist(nextGames, gameId)
+  }, [games, persist])
+
+  const togglePlayerActive = useCallback((gameId: UUID, playerId: UUID) => {
+    const nextGames = games.map((g) =>
+      g.id === gameId
+        ? {
+            ...g,
+            players: g.players.map((p) =>
+              p.id === playerId
+                ? { ...p, active: !p.active, metadata: { ...p.metadata, updatedAt: new Date().toISOString() } }
+                : p,
+            ),
+            metadata: { ...g.metadata, updatedAt: new Date().toISOString() },
+          }
+        : g,
+    )
+    persist(nextGames, gameId)
+  }, [games, persist])
+
   const selectGame = useCallback((id: UUID) => {
     if (games.some((g) => g.id === id)) {
       persist(games, id)
@@ -81,6 +150,18 @@ export function useGameState() {
     persist(nextGames, gameId)
   }, [games, persist])
 
-  return { games, currentGame, currentGameId, createGame, selectGame, deleteGame, addPlay }
+  return { 
+    games, 
+    currentGame, 
+    currentGameId, 
+    createGame, 
+    selectGame, 
+    deleteGame, 
+    addPlay,
+    addPlayer,
+    updatePlayer,
+    deletePlayer,
+    togglePlayerActive
+  }
 }
 

@@ -1,6 +1,8 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
 import FormationModal from '../components/FormationModal'
 import FormationHistory from '../components/FormationHistory'
+import PlayerSelector from '../components/PlayerSelector'
+import PlayerStatsList from '../components/PlayerStatsList'
 import { useGameState } from '../hooks/useGameState'
 import { useVoiceInput } from '../hooks/useVoiceInput'
 import { parsePlayFromText, validatePlayData, sanitizePlayData, type ValidationError } from '../utils'
@@ -19,6 +21,7 @@ export default function PlayEntry() {
   const [yardsText, setYardsText] = useState('')
   const [result, setResult] = useState<'touchdown' | 'field_goal' | 'punt' | 'turnover' | 'safety' | 'none'>('none')
   const [notes, setNotes] = useState('')
+  const [primaryPlayerId, setPrimaryPlayerId] = useState<string | undefined>(undefined)
   const [overrideMode, setOverrideMode] = useState(false)
   const [manualDown, setManualDown] = useState(1)
   const [manualDistance, setManualDistance] = useState(10)
@@ -146,6 +149,7 @@ export default function PlayEntry() {
       down: playStartSituation.down, // This play's starting down
       distance: playStartSituation.distance, // This play's starting distance
       playerStats: [],
+      primaryPlayerId: primaryPlayerId,
       timestamp: now,
       notes: sanitized.notes,
     }
@@ -157,6 +161,7 @@ export default function PlayEntry() {
     setYardsText('')
     setResult('none')
     setNotes('')
+    setPrimaryPlayerId(undefined)
     setOverrideMode(false)
     
     // Update manual fields to calculated next situation for potential override
@@ -377,6 +382,18 @@ export default function PlayEntry() {
           </select>
         </div>
 
+        {/* Player Selection */}
+        {currentGame && (
+          <PlayerSelector
+            players={currentGame.players}
+            selectedPlayerId={primaryPlayerId}
+            onSelectPlayer={setPrimaryPlayerId}
+            playType={playType}
+            team={currentSituation.fieldPosition.side}
+            label="Primary Player"
+          />
+        )}
+
         {/* Validation Errors */}
         {validationErrors.length > 0 && (
           <div className="bg-red-50 border border-red-200 rounded p-3">
@@ -405,6 +422,16 @@ export default function PlayEntry() {
       {currentGame && currentGame.plays.length > 0 && (
         <div className="mt-8 max-w-xl">
           <FormationHistory plays={currentGame.plays} />
+        </div>
+      )}
+
+      {/* Player Statistics Section */}
+      {currentGame && currentGame.players.length > 0 && (
+        <div className="mt-8">
+          <PlayerStatsList 
+            players={currentGame.players} 
+            plays={currentGame.plays} 
+          />
         </div>
       )}
 

@@ -166,4 +166,48 @@ export function analyzeFormationHistory(plays: Array<{ formation: string; playTy
     .sort((a, b) => b.count - a.count) // Sort by usage frequency
 }
 
+export function calculatePlayerStats(
+  playerId: string,
+  plays: Array<{
+    playType: 'run' | 'pass'
+    yards: number
+    result: string
+    primaryPlayerId?: string
+  }>
+) {
+  const stats = {
+    playerId,
+    rushingAttempts: 0,
+    rushingYards: 0,
+    passingAttempts: 0,
+    passingCompletions: 0,
+    passingYards: 0,
+    interceptions: 0,
+    touchdowns: 0,
+    fumbles: 0,
+    fumblesLost: 0
+  }
+
+  plays.forEach(play => {
+    if (play.primaryPlayerId === playerId) {
+      if (play.playType === 'run') {
+        stats.rushingAttempts++
+        stats.rushingYards += play.yards
+        if (play.result === 'touchdown') stats.touchdowns++
+        if (play.result === 'turnover') stats.fumbles++
+      } else if (play.playType === 'pass') {
+        stats.passingAttempts++
+        if (play.yards > 0) {
+          stats.passingCompletions++
+          stats.passingYards += play.yards
+        }
+        if (play.result === 'touchdown') stats.touchdowns++
+        if (play.result === 'turnover') stats.interceptions++
+      }
+    }
+  })
+
+  return stats
+}
+
 

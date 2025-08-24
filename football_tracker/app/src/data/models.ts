@@ -13,6 +13,22 @@ export interface PlayerStats {
   passingCompletions: number
   passingYards: number
   interceptions: number
+  touchdowns: number
+  fumbles: number
+  fumblesLost: number
+}
+
+export interface Player {
+  id: UUID
+  name: string
+  team: 'home' | 'away'
+  number?: string
+  position?: 'QB' | 'RB' | 'WR' | 'TE' | 'OL' | 'DL' | 'LB' | 'CB' | 'S' | 'K' | 'P' | 'Other'
+  active: boolean
+  metadata: {
+    createdAt: string
+    updatedAt: string
+  }
 }
 
 export interface FieldPosition {
@@ -35,6 +51,7 @@ export interface Play {
   down: number
   distance: number
   playerStats: PlayerStats[]
+  primaryPlayerId?: UUID // Main player involved in the play
   timestamp: string
   notes?: string
 }
@@ -45,7 +62,7 @@ export interface Game {
   awayTeam: string
   date: string
   plays: Play[]
-  players: { id: UUID; name: string; team: 'home' | 'away' }[]
+  players: Player[]
   currentFieldPosition: FieldPosition
   metadata: GameMetadata
 }
