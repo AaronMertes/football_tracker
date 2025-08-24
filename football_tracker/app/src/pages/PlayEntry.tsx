@@ -298,12 +298,20 @@ export default function PlayEntry() {
                 if (e.key === 'Enter') {
                   const text = e.currentTarget.value
                   if (text.trim()) {
+                    console.log('🎯 Quick Entry Text:', text)
+                    console.log('🎯 Available Players:', currentGame?.players?.map(p => p.name) || [])
+                    
                     const parsed = parsePlayFromText(text, currentGame?.players)
+                    console.log('🎯 Parsed Result:', parsed)
+                    
                     if (parsed.formation) setFormation(parsed.formation)
                     if (parsed.playType) setPlayType(parsed.playType)
                     if (typeof parsed.yards === 'number') setYardsText(String(parsed.yards))
                     if (parsed.result) setResult(parsed.result)
-                    if (parsed.playerId) setPrimaryPlayerId(parsed.playerId)
+                    if (parsed.playerId) {
+                      console.log('🎯 Setting Primary Player ID:', parsed.playerId)
+                      setPrimaryPlayerId(parsed.playerId)
+                    }
                     setNotes((n) => (n ? n + ' ' : '') + (parsed.notes ?? ''))
                     e.currentTarget.value = ''
                     
@@ -327,6 +335,8 @@ export default function PlayEntry() {
               ✨ Examples: "21 run gain of 3", "12 pass loss of 2", "11 pass touchdown", "22 run lost 1", "12 pass incomplete"
               <br />
               🎯 <strong>With Players:</strong> "21 Kamara run 5 yards", "12 Carr pass to Thomas touchdown", "11 Robinson rush loss of 2"
+              <br />
+              💡 <strong>Tip:</strong> Use last names only! "Kamara" works for "Alvin Kamara"
             </div>
         </div>
         <div className="grid gap-1">

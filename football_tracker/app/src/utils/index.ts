@@ -55,20 +55,42 @@ export function parsePlayFromText(input: string, players?: Array<{ id: string; n
 
   // Player name parsing - look for player names in the text
   if (players && players.length > 0) {
+    console.log('🔍 Parsing players:', players.map(p => p.name))
+    console.log('🔍 Looking for player names in text:', text)
+    
     // Sort players by name length (longest first) to avoid partial matches
     const sortedPlayers = [...players].sort((a, b) => b.name.length - a.name.length)
     
     for (const player of sortedPlayers) {
       const playerNameLower = player.name.toLowerCase()
-      // Check if player name appears in the text
+      console.log(`🔍 Checking player: "${player.name}" (${playerNameLower}) in text: "${text}"`)
+      
+      // Check for exact match first
       if (text.includes(playerNameLower)) {
+        console.log(`✅ Found exact match: ${player.name} (ID: ${player.id})`)
         out.playerName = player.name
         out.playerId = player.id
         // Remove player name from notes to avoid duplication
         out.notes = input.trim().replace(new RegExp(player.name, 'gi'), '').trim()
         break
       }
+      
+      // Check for last name match (split by space and check last part)
+      const nameParts = playerNameLower.split(' ')
+      if (nameParts.length > 1) {
+        const lastName = nameParts[nameParts.length - 1]
+        if (text.includes(lastName)) {
+          console.log(`✅ Found last name match: "${lastName}" for player ${player.name} (ID: ${player.id})`)
+          out.playerName = player.name
+          out.playerId = player.id
+          // Remove last name from notes to avoid duplication
+          out.notes = input.trim().replace(new RegExp(lastName, 'gi'), '').trim()
+          break
+        }
+      }
     }
+  } else {
+    console.log('⚠️ No players available for parsing')
   }
 
   return out
