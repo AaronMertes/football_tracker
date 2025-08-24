@@ -6,7 +6,13 @@ export function parsePlayFromText(input: string): {
   notes?: string
 } {
   const text = input.trim().toLowerCase()
-  const out: any = { notes: input.trim() }
+  const out: {
+    formation?: string
+    playType?: 'run' | 'pass'
+    yards?: number
+    result?: 'touchdown' | 'field_goal' | 'punt' | 'turnover' | 'safety' | 'none'
+    notes?: string
+  } = { notes: input.trim() }
 
   if (/\b(run|rush|rushed)\b/.test(text)) out.playType = 'run'
   if (/\b(pass|passed|throw)\b/.test(text)) out.playType = 'pass'
@@ -16,7 +22,7 @@ export function parsePlayFromText(input: string): {
     out.yards = 0
   } else {
     // Look for yards with various patterns
-    let yardsMatch = text.match(/(-?\d+)\s*(?:yds|yards|y)/)
+    const yardsMatch = text.match(/(-?\d+)\s*(?:yds|yards|y)/)
     
     // Check for "loss of X" or "lose X" patterns
     const lossMatch = text.match(/(?:loss of|lose|lost)\s+(\d+)/)

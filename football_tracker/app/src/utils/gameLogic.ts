@@ -1,4 +1,4 @@
-import type { FieldPosition, Play, PlayResult } from '../data/models'
+import type { FieldPosition, PlayResult } from '../data/models'
 
 export interface GameSituation {
   down: number
@@ -190,14 +190,7 @@ export function formatFieldPosition(position: FieldPosition): string {
   return `${team} ${position.yardLine}`
 }
 
-/**
- * Get distance to goal line for a field position
- */
-function getDistanceToGoal(position: FieldPosition): number {
-  // On your own side (home): distance = 50 + yardLine  
-  // On opponent's side (away): distance = yardLine
-  return position.side === 'home' ? 50 + position.yardLine : position.yardLine
-}
+// Removed unused getDistanceToGoal function
 
 /**
  * Format down and distance for display

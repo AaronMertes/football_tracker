@@ -1,11 +1,33 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-type SpeechRecognitionLike = typeof window extends any
-  ? (Window & typeof globalThis & {
-      webkitSpeechRecognition?: any
-      SpeechRecognition?: any
-    })['SpeechRecognition']
-  : any
+interface SpeechRecognitionEvent {
+  resultIndex: number
+  results: {
+    length: number
+    [index: number]: {
+      isFinal: boolean
+      [index: number]: { transcript: string }
+    }
+  }
+}
+
+interface SpeechRecognitionErrorEvent {
+  error: string
+}
+
+interface SpeechRecognitionInstance {
+  lang: string
+  continuous: boolean
+  interimResults: boolean
+  onstart: () => void
+  onerror: (event: SpeechRecognitionErrorEvent) => void
+  onend: () => void
+  onresult: (event: SpeechRecognitionEvent) => void
+  start: () => void
+  stop: () => void
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance
 
 interface UseVoiceInputState {
   isSupported: boolean
@@ -18,18 +40,21 @@ interface UseVoiceInputState {
 }
 
 export function useVoiceInput(): UseVoiceInputState {
-  const RecognitionCtor =
-    (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+  const RecognitionCtor = 
+    (window as Window & { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor })
+      .SpeechRecognition || 
+    (window as Window & { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor })
+      .webkitSpeechRecognition
 
-  const recognitionRef = useRef<any | null>(null)
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const [isSupported] = useState<boolean>(Boolean(RecognitionCtor))
   const [listening, setListening] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!isSupported) return
-    const recognition: any = new RecognitionCtor() as SpeechRecognitionLike
+    if (!isSupported || !RecognitionCtor) return
+    const recognition = new RecognitionCtor()
     recognition.lang = 'en-US'
     recognition.continuous = false
     recognition.interimResults = true
@@ -39,7 +64,7 @@ export function useVoiceInput(): UseVoiceInputState {
       setError(null)
       setTranscript('')
     }
-    recognition.onerror = (e: any) => {
+    recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
       console.error('Voice recognition error:', e)
       let errorMessage = 'voice_error'
       
@@ -72,7 +97,7 @@ export function useVoiceInput(): UseVoiceInputState {
     recognition.onend = () => {
       setListening(false)
     }
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       let finalText = ''
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         const result = event.results[i]
@@ -87,7 +112,9 @@ export function useVoiceInput(): UseVoiceInputState {
     return () => {
       try {
         recognition.stop()
-      } catch {}
+      } catch (error) {
+        console.warn('Failed to stop recognition during cleanup:', error)
+      }
       recognitionRef.current = null
     }
   }, [isSupported, RecognitionCtor])
@@ -123,7 +150,9 @@ export function useVoiceInput(): UseVoiceInputState {
     if (!recognitionRef.current) return
     try {
       recognitionRef.current.stop()
-    } catch {}
+    } catch (error) {
+      console.warn('Failed to stop recognition:', error)
+    }
   }, [])
 
   const reset = useCallback(() => {
