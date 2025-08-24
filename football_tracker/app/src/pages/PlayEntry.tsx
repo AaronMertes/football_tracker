@@ -36,6 +36,7 @@ export default function PlayEntry() {
   const voice = useVoiceInput()
   const saveButtonRef = useRef<HTMLButtonElement>(null)
   const [shouldFocusSaveButton, setShouldFocusSaveButton] = useState(false)
+  const [pendingParticipants, setPendingParticipants] = useState<Array<{ playerId: string; role: 'passer' | 'rusher' | 'receiver' | 'target' | 'interceptor' | 'fumbler' | 'recoverer'; yards?: number; result?: 'complete' | 'incomplete' | 'intercepted' | 'fumbled' | 'recovered' | 'touchdown' }>>([])
 
   // Calculate current game situation based on last play or default
   const currentSituation: GameSituation = useMemo(() => {
@@ -146,6 +147,9 @@ export default function PlayEntry() {
       distance: manualDistance
     } : currentSituation
 
+    // Use pending participants if regular participants state is empty (fixes timing issue)
+    const finalParticipants = participants.length > 0 ? participants : pendingParticipants
+    
     const play: Play = {
       id: crypto.randomUUID(),
       gameId: currentGameId,
@@ -158,7 +162,7 @@ export default function PlayEntry() {
       down: playStartSituation.down, // This play's starting down
       distance: playStartSituation.distance, // This play's starting distance
       playerStats: [],
-      participants: participants.map(p => ({
+      participants: finalParticipants.map(p => ({
         playerId: p.playerId,
         role: p.role,
         yards: p.yards,
@@ -168,6 +172,10 @@ export default function PlayEntry() {
       notes: sanitized.notes,
     }
     
+    console.log('Saving play with participants:', play.participants)
+    console.log('Current participants state:', participants)
+    console.log('Pending participants state:', pendingParticipants)
+    console.log('Final participants used:', finalParticipants)
     addPlay(currentGameId, play)
     
     // Reset form fields for next entry
@@ -176,6 +184,7 @@ export default function PlayEntry() {
     setResult('none')
     setNotes('')
     setParticipants([])
+    setPendingParticipants([])
     setOverrideMode(false)
     
     // Update manual fields to calculated next situation for potential override
@@ -324,17 +333,30 @@ export default function PlayEntry() {
                     if (parsed.result) setResult(parsed.result)
                     
                     // Handle player participants from quick entry
+                    console.log('🎯 Quick Entry - Player ID found:', parsed.playerId)
+                    console.log('🎯 Quick Entry - Available players:', currentGame?.players?.map(p => ({ id: p.id, name: p.name })))
+                    
                     if (parsed.playerId && currentGame?.players) {
                       const player = currentGame.players.find(p => p.id === parsed.playerId)
+                      console.log('🎯 Quick Entry - Found player:', player)
                       if (player) {
                         if (parsed.playType === 'run') {
                           // Running play - add as rusher
-                          setParticipants([{
+                          const runParticipants: Array<{
+                            playerId: string
+                            role: 'passer' | 'rusher' | 'receiver' | 'target' | 'interceptor' | 'fumbler' | 'recoverer'
+                            yards?: number
+                            result?: 'complete' | 'incomplete' | 'intercepted' | 'fumbled' | 'recovered' | 'touchdown'
+                          }> = [{
                             playerId: parsed.playerId,
                             role: 'rusher',
                             yards: parsed.yards,
-                            result: parsed.result === 'touchdown' ? 'touchdown' : undefined
-                          }])
+                            result: parsed.result === 'touchdown' ? 'touchdown' : 
+                                   (parsed.yards && parsed.yards > 0 ? 'complete' : undefined)
+                          }]
+                          console.log('Setting participants for running play:', runParticipants)
+                          setParticipants(runParticipants)
+                          setPendingParticipants(runParticipants)
                         } else if (parsed.playType === 'pass') {
                           // Passing play - add default QB + specified player
                           const newParticipants: Array<{
@@ -359,20 +381,31 @@ export default function PlayEntry() {
                             playerId: parsed.playerId,
                             role: 'receiver',
                             yards: parsed.yards,
-                            result: parsed.result === 'touchdown' ? 'touchdown' : undefined
+                            result: parsed.result === 'touchdown' ? 'touchdown' : 
+                                   (parsed.yards && parsed.yards > 0 ? 'complete' : undefined)
                           })
                           
+                          console.log('🎯 Quick Entry - Setting participants for passing play:', newParticipants)
                           setParticipants(newParticipants)
+                          setPendingParticipants(newParticipants)
+                          console.log('🎯 Quick Entry - Participants set, pendingParticipants should now be:', newParticipants)
                         }
                       }
                     } else if (parsed.playType === 'pass' && defaultQuarterback) {
                       // No specific player mentioned, but it's a passing play - add default QB
-                      setParticipants([{
+                      const qbOnly: Array<{
+                        playerId: string
+                        role: 'passer' | 'rusher' | 'receiver' | 'target' | 'interceptor' | 'fumbler' | 'recoverer'
+                        yards?: number
+                        result?: 'complete' | 'incomplete' | 'intercepted' | 'fumbled' | 'recovered' | 'touchdown'
+                      }> = [{
                         playerId: defaultQuarterback.id,
                         role: 'passer',
                         yards: undefined,
                         result: undefined
-                      }])
+                      }]
+                      setParticipants(qbOnly)
+                      setPendingParticipants(qbOnly)
                     }
                     
                     setNotes((n) => (n ? n + ' ' : '') + (parsed.notes ?? ''))

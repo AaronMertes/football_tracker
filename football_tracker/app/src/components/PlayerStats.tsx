@@ -29,14 +29,14 @@ export default function PlayerStats({ player, stats, className = '' }: PlayerSta
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold text-primary">
-            {stats.rushingYards + stats.passingYards}
+            {stats.rushingYards + stats.passingYards + stats.receivingYards}
           </div>
           <div className="text-xs text-gray-500">Total Yards</div>
         </div>
       </div>
 
       {/* Statistics Grid */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         {/* Rushing Stats */}
         <div className="space-y-2">
           <h4 className="font-medium text-gray-700 border-b pb-1">Rushing</h4>
@@ -83,6 +83,33 @@ export default function PlayerStats({ player, stats, className = '' }: PlayerSta
             <div className="flex justify-between">
               <span>Completion %:</span>
               <span className="font-medium">{completionRate}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Receiving Stats */}
+        <div className="space-y-2">
+          <h4 className="font-medium text-gray-700 border-b pb-1">Receiving</h4>
+          <div className="space-y-1 text-sm">
+            <div className="flex justify-between">
+              <span>Targets:</span>
+              <span className="font-medium">{stats.receivingAttempts}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Receptions:</span>
+              <span className="font-medium">{stats.receptions}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Yards:</span>
+              <span className="font-medium">{stats.receivingYards}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Average:</span>
+              <span className="font-medium">{stats.receivingAttempts > 0 ? (stats.receivingYards / stats.receivingAttempts).toFixed(1) : '0.0'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Catch %:</span>
+              <span className="font-medium">{stats.receivingAttempts > 0 ? ((stats.receptions / stats.receivingAttempts) * 100).toFixed(1) : '0.0'}%</span>
             </div>
           </div>
         </div>

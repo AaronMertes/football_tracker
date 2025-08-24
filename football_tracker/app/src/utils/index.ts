@@ -240,15 +240,23 @@ export function calculatePlayerStats(
     receptions: 0
   }
 
+  console.log(`Calculating stats for player ${playerId}, processing ${plays.length} plays`)
   plays.forEach(play => {
+    console.log(`Processing play:`, play)
     // Skip plays that don't have participants (old plays from before participants were added)
     if (!play.participants || !Array.isArray(play.participants)) {
+      console.log(`Skipping play without participants:`, play)
       return
     }
     
     // Find this player's participation in this play
     const participation = play.participants.find(p => p.playerId === playerId)
-    if (!participation) return
+    if (!participation) {
+      console.log(`Player ${playerId} not found in play participants:`, play.participants)
+      return
+    }
+
+    console.log(`Found participation for player ${playerId}:`, participation)
 
     switch (participation.role) {
       case 'rusher':

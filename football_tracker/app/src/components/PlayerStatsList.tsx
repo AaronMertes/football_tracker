@@ -19,15 +19,22 @@ export default function PlayerStatsList({ players, plays, className = '' }: Play
     )
   }
 
+  console.log('PlayerStatsList - Active players:', activePlayers.map(p => ({ id: p.id, name: p.name })))
+  console.log('PlayerStatsList - Plays to process:', plays.length)
+  if (plays.length > 0) {
+    console.log('PlayerStatsList - Sample play:', plays[0])
+  }
+  
   // Calculate stats for each player
-  const playersWithStats = activePlayers.map(player => ({
-    player,
-    stats: calculatePlayerStats(player.id, plays)
-  })).filter(({ stats }) => 
-    stats.rushingAttempts > 0 || 
-    stats.passingAttempts > 0 || 
-    stats.touchdowns > 0
-  )
+  const playersWithStats = activePlayers.map(player => {
+    const stats = calculatePlayerStats(player.id, plays)
+    console.log(`PlayerStatsList - Stats for ${player.name} (${player.id}):`, stats)
+    return { player, stats }
+  }).filter(({ stats }) => {
+    const hasStats = stats.rushingAttempts > 0 || stats.passingAttempts > 0 || stats.receivingAttempts > 0 || stats.touchdowns > 0
+    console.log(`PlayerStatsList - ${stats.playerId} has stats:`, hasStats, stats)
+    return hasStats
+  })
 
   // Sort by total yards (most productive first)
   playersWithStats.sort((a, b) => {
