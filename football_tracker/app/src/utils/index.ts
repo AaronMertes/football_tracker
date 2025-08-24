@@ -241,6 +241,11 @@ export function calculatePlayerStats(
   }
 
   plays.forEach(play => {
+    // Skip plays that don't have participants (old plays from before participants were added)
+    if (!play.participants || !Array.isArray(play.participants)) {
+      return
+    }
+    
     // Find this player's participation in this play
     const participation = play.participants.find(p => p.playerId === playerId)
     if (!participation) return
